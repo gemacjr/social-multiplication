@@ -3,6 +3,7 @@ package com.swiftbeard.socialmultiplication.service;
 import com.swiftbeard.socialmultiplication.domain.Multiplication;
 import com.swiftbeard.socialmultiplication.domain.MultiplicationResultAttempt;
 import com.swiftbeard.socialmultiplication.domain.User;
+import com.swiftbeard.socialmultiplication.event.EventDispatcher;
 import com.swiftbeard.socialmultiplication.repository.MultiplicationResultAttemptRepository;
 import com.swiftbeard.socialmultiplication.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,19 +15,22 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class MultiplicationServiceImpl implements MultiplicationService {
+class MultiplicationServiceImpl implements MultiplicationService {
 
     private RandomGeneratorService randomGeneratorService;
     private MultiplicationResultAttemptRepository attemptRepository;
     private UserRepository userRepository;
+    private EventDispatcher eventDispatcher;
 
     @Autowired
     public MultiplicationServiceImpl(final RandomGeneratorService randomGeneratorService,
                                      final MultiplicationResultAttemptRepository attemptRepository,
-                                     final UserRepository userRepository) {
+                                     final UserRepository userRepository,
+                                     final EventDispatcher eventDispatcher) {
         this.randomGeneratorService = randomGeneratorService;
         this.attemptRepository = attemptRepository;
         this.userRepository = userRepository;
+        this.eventDispatcher = eventDispatcher;
     }
 
     @Override
@@ -60,12 +64,25 @@ public class MultiplicationServiceImpl implements MultiplicationService {
         // Stores the attempt
         attemptRepository.save(checkedAttempt);
 
+        // Communicates the result via Event
+        eventDispatcher.send(
+                new MultiplicationSolvedEvent(checkedAttempt.getId(),
+                        checkedAttempt.getUser().getId(),
+                        checkedAttempt.isCorrect())
+        );
+
         return isCorrect;
     }
 
     @Override
-    public List<MultiplicationResultAttempt> getStatsForUser(String userAlias) {
+    public List<MultiplicationResultAttempt> getStatsForUser(final String userAlias) {
         return attemptRepository.findTop5ByUserAliasOrderByIdDesc(userAlias);
     }
 
-}
+    @Override
+    public MultiplicationResultAttempt getResultById(final Long resultId) {
+        return attemptRepository.findOne(resultId);
+    }
+
+
+}}
