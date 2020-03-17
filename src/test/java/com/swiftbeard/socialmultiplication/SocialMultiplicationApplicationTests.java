@@ -3,6 +3,8 @@ package com.swiftbeard.socialmultiplication;
 import com.swiftbeard.socialmultiplication.domain.Multiplication;
 import com.swiftbeard.socialmultiplication.domain.MultiplicationResultAttempt;
 import com.swiftbeard.socialmultiplication.domain.User;
+import com.swiftbeard.socialmultiplication.event.EventDispatcher;
+import com.swiftbeard.socialmultiplication.event.MultiplicationSolvedEvent;
 import com.swiftbeard.socialmultiplication.repository.MultiplicationResultAttemptRepository;
 import com.swiftbeard.socialmultiplication.repository.UserRepository;
 import com.swiftbeard.socialmultiplication.service.MultiplicationService;
@@ -24,6 +26,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.verify;
 
 @RunWith(SpringRunner.class)
@@ -41,11 +44,15 @@ public class SocialMultiplicationApplicationTests {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private EventDispatcher eventDispatcher;
+
     @Before
     public void setUp() {
         // With this call to initMocks we tell Mockito to process the annotations
         MockitoAnnotations.initMocks(this);
-        multiplicationServiceImpl = new MultiplicationServiceImpl(randomGeneratorService, attemptRepository, userRepository);
+        multiplicationServiceImpl = new MultiplicationServiceImpl(randomGeneratorService, attemptRepository,
+                userRepository, eventDispatcher);
     }
 
     @Test
@@ -70,6 +77,8 @@ public class SocialMultiplicationApplicationTests {
                 user, multiplication, 3000, false);
         MultiplicationResultAttempt verifiedAttempt = new MultiplicationResultAttempt(
                 user, multiplication, 3000, true);
+        MultiplicationSolvedEvent event = new MultiplicationSolvedEvent(attempt.getId(),
+                attempt.getUser().getId(), true);
         given(userRepository.findByAlias("john_doe")).willReturn(Optional.empty());
 
         // when
@@ -78,6 +87,7 @@ public class SocialMultiplicationApplicationTests {
         // then
         assertThat(attemptResult).isTrue();
         verify(attemptRepository).save(verifiedAttempt);
+        verify(eventDispatcher).send(eq(event));
     }
 
     @Test
@@ -87,6 +97,8 @@ public class SocialMultiplicationApplicationTests {
         User user = new User("john_doe");
         MultiplicationResultAttempt attempt = new MultiplicationResultAttempt(
                 user, multiplication, 3010, false);
+        MultiplicationSolvedEvent event = new MultiplicationSolvedEvent(attempt.getId(),
+                attempt.getUser().getId(), false);
         given(userRepository.findByAlias("john_doe")).willReturn(Optional.empty());
 
         // when
@@ -95,6 +107,7 @@ public class SocialMultiplicationApplicationTests {
         // then
         assertThat(attemptResult).isFalse();
         verify(attemptRepository).save(attempt);
+        verify(eventDispatcher).send(eq(event));
     }
 
     @Test

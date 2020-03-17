@@ -4,6 +4,7 @@ import com.swiftbeard.socialmultiplication.domain.Multiplication;
 import com.swiftbeard.socialmultiplication.domain.MultiplicationResultAttempt;
 import com.swiftbeard.socialmultiplication.domain.User;
 import com.swiftbeard.socialmultiplication.event.EventDispatcher;
+import com.swiftbeard.socialmultiplication.event.MultiplicationSolvedEvent;
 import com.swiftbeard.socialmultiplication.repository.MultiplicationResultAttemptRepository;
 import com.swiftbeard.socialmultiplication.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-class MultiplicationServiceImpl implements MultiplicationService {
+public class MultiplicationServiceImpl implements MultiplicationService {
 
     private RandomGeneratorService randomGeneratorService;
     private MultiplicationResultAttemptRepository attemptRepository;
@@ -85,4 +86,4 @@ class MultiplicationServiceImpl implements MultiplicationService {
     }
 
 
-}}
+}
